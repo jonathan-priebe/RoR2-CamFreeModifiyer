@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+
+# DLL references (must be copied locally)
+libs/*.dll
+
+# IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS files
+.DS_Store
+Thumbs.db
