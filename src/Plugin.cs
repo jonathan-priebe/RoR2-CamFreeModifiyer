@@ -10,7 +10,7 @@ namespace CamFreeModifiyer
     {
         public const string PluginGUID = "com.jpriebe.camfreemodifiyer";
         public const string PluginName = "CamFreeModifiyer";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.0.2";
 
         // Config entries
         public static ConfigEntry<float> FieldOfView;
