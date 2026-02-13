@@ -90,7 +90,7 @@ jobs:
 
           # Download NuGet packages with Unity stubs
           echo "=== Downloading NuGet packages ==="
-          dotnet new console -n temp_project -o temp_proj --force -f netstandard2.1
+          dotnet new console -n temp_project -o temp_proj --force
           cd temp_proj
 
           # Add BepInEx.Core which includes Unity stubs
