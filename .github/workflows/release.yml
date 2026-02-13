@@ -93,21 +93,34 @@ jobs:
           dotnet new console -n temp_project -o temp_proj --force
           cd temp_proj
           dotnet add package RiskOfRain2.GameLibs --version 1.3.1.275-r.0
+          dotnet restore
           cd ..
 
-          # Show GameLibs structure for debugging
-          echo "GameLibs DLLs found:"
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "*.dll" -type f | head -30
-
-          # Copy all needed DLLs from GameLibs (it contains Unity DLLs too)
+          # Copy RoR2 DLLs
           find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \;
           find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \;
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.dll" -exec cp {} libs/ \;
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \;
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \;
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \;
 
           rm -rf temp_proj
+
+          # Download Unity DLLs from a community source
+          echo "=== Downloading Unity DLLs ==="
+          UNITY_VERSION="2021.3.33"
+
+          # Download from UnityNuGet via direct NuGet package
+          curl -L -o unity_core.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine/1.0.0" || true
+          curl -L -o unity_coremodule.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine.CoreModule/1.0.0" || true
+          curl -L -o unity_imgui.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine.IMGUIModule/1.0.0" || true
+          curl -L -o unity_input.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine.InputLegacyModule/1.0.0" || true
+
+          # Extract DLLs from nupkg (it's just a zip)
+          for pkg in unity_*.nupkg; do
+            if [ -f "$pkg" ]; then
+              unzip -q -o "$pkg" -d unity_temp 2>/dev/null || true
+              find unity_temp -name "*.dll" -exec cp {} libs/ \; 2>/dev/null || true
+              rm -rf unity_temp
+            fi
+          done
+          rm -f unity_*.nupkg
 
           echo "=== Final libs content ==="
           ls -la libs/
