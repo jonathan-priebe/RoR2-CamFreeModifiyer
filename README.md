@@ -1,5 +1,7 @@
 # RoR2 CamFreeModifiyer
 
+![Menu Camera](img/MenuCam.jpg)
+
 A Risk of Rain 2 mod that lets you customize camera settings during gameplay.
 
 ## Features
@@ -8,8 +10,13 @@ A Risk of Rain 2 mod that lets you customize camera settings during gameplay.
 - **Camera Distance**: Change how far the camera is from your character (5 - 30)
 - **Camera Pitch**: Tilt the camera vertically (-45° to +45°)
 - **Camera Height**: Adjust the vertical offset of the camera (-5 to +10)
+- **Camera Horizontal**: Shift the camera left or right (-10 to +10)
 - **In-Game Menu**: Press F5 (configurable) to open the settings menu
 - **Persistent Settings**: All settings are saved in the BepInEx config file
+
+## Example
+
+![Gameplay Camera](img/GameplayCam.jpg)
 
 ## Requirements
 
@@ -53,10 +60,6 @@ A Risk of Rain 2 mod that lets you customize camera settings during gameplay.
 2. Press **F5** to open the camera settings menu (key is configurable)
 3. Adjust the sliders to your preference
 4. Close the menu with the "Close" button or press F5 again
-
-## Known Bugs
-
-- Camera moves continuously when changing distance, height, or pitch values (offset is applied every frame instead of once)
 
 ## Configuration
 
