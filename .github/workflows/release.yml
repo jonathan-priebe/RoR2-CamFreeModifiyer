@@ -75,32 +75,26 @@ jobs:
           cp bepinex_temp/BepInExPack/BepInEx/core/0Harmony.dll libs/
           rm -rf bepinex_temp bepinex.zip
 
-          # Download RoR2 stripped assemblies from r2modman CDN / community source
+          # Download RoR2 assemblies using NuGet package
           echo "Downloading RoR2 assemblies..."
 
-          # Using the NuGet package approach
           dotnet new console -n temp_project -o temp_proj
           cd temp_proj
           dotnet add package RiskOfRain2.GameLibs --version 1.3.1.275-r.0
           cd ..
 
-          # Copy from NuGet cache
-          NUGET_PATH=$(find ~/.nuget/packages/riskofrain2.gamelibs -name "*.dll" -path "*netstandard2.1*" | head -1 | xargs dirname)
-          if [ -n "$NUGET_PATH" ]; then
-            cp "$NUGET_PATH"/RoR2.dll libs/ 2>/dev/null || true
-            cp "$NUGET_PATH"/Assembly-CSharp.dll libs/ 2>/dev/null || true
-          fi
+          # Find and copy RoR2 DLLs from NuGet cache
+          GAMELIBS_PATH="$HOME/.nuget/packages/riskofrain2.gamelibs/1.3.1.275-r.0/lib"
+          echo "Looking for DLLs in: $GAMELIBS_PATH"
+          ls -la "$GAMELIBS_PATH" 2>/dev/null || echo "Path not found, searching..."
 
-          # Download Unity assemblies from UnityNuGet
-          cd temp_proj
-          dotnet add package Unity.UnityEngine.dll --version 1.0.0-unity3d || true
-          cd ..
-
-          # Find Unity DLLs in cache
-          find ~/.nuget/packages -name "UnityEngine.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find ~/.nuget/packages -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find ~/.nuget/packages -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find ~/.nuget/packages -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          # Find the correct subfolder and copy DLLs
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
 
           rm -rf temp_proj
 
