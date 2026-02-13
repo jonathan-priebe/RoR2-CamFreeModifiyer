@@ -63,59 +63,9 @@ jobs:
         run: |
           sed -i 's/<Version>[^<]*<\/Version>/<Version>${{ steps.new_version.outputs.version }}<\/Version>/' CamFreeModifiyer.csproj
 
-      - name: Download dependencies
+      - name: Check libary dependencies
         run: |
-          mkdir -p libs
-
-          # Download BepInEx from Thunderstore
-          echo "=== Downloading BepInEx ==="
-          curl -L -o bepinex.zip "https://thunderstore.io/package/download/bbepis/BepInExPack/5.4.2121/"
-          unzip -q -o bepinex.zip -d bepinex_temp
-
-          # Show BepInEx structure for debugging
-          echo "BepInEx DLLs found:"
-          find bepinex_temp -name "*.dll" -type f
-
-          # Copy BepInEx core DLLs
-          cp bepinex_temp/BepInExPack/BepInEx/core/BepInEx.dll libs/
-          cp bepinex_temp/BepInExPack/BepInEx/core/0Harmony.dll libs/
-
-          # Copy Unity DLLs from wherever they are in BepInEx
-          find bepinex_temp -name "UnityEngine.dll" -exec cp {} libs/ \;
-          find bepinex_temp -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \;
-          find bepinex_temp -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \;
-          find bepinex_temp -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \;
-
-          rm -rf bepinex_temp bepinex.zip
-
-          # Download NuGet packages with Unity stubs
-          echo "=== Downloading NuGet packages ==="
-          dotnet new console -n temp_project -o temp_proj --force
-          cd temp_proj
-
-          # Add BepInEx.Core which includes Unity stubs
-          dotnet add package BepInEx.Core --version 5.4.21
-          dotnet add package RiskOfRain2.GameLibs --version 1.3.1.275-r.0
-          dotnet add package UnityEngine.Modules --version 2021.3.33 2>/dev/null || true
-          dotnet restore
-          cd ..
-
-          # Copy from NuGet cache
-          echo "=== Copying DLLs from NuGet cache ==="
-
-          # Copy RoR2 DLLs
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \;
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \;
-
-          # Copy Unity stubs from BepInEx.Core or UnityEngine.Modules
-          find "$HOME/.nuget/packages" -path "*/UnityEngine.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find "$HOME/.nuget/packages" -path "*/UnityEngine.CoreModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find "$HOME/.nuget/packages" -path "*/UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find "$HOME/.nuget/packages" -path "*/UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
-
-          rm -rf temp_proj
-
-          echo "=== Final libs content ==="
+          echo "=== Check libs content ==="
           ls -la libs/
 
       - name: Build project
