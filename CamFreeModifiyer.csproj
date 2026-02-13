@@ -5,7 +5,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>CamFreeModifiyer</AssemblyName>
     <RootNamespace>CamFreeModifiyer</RootNamespace>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>jpriebe</Authors>
     <Description>Risk of Rain 2 Camera Modifier - Customizable camera settings</Description>
   </PropertyGroup>
