@@ -2,8 +2,8 @@
 bin/
 obj/
 
-# DLL references (must be copied locally)
-libs/*.dll
+# DLL references 
+libs/
 
 # IDE files
 .vs/

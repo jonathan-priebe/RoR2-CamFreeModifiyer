@@ -17,6 +17,7 @@ namespace CamFreeModifiyer
         public static ConfigEntry<float> CameraDistance;
         public static ConfigEntry<float> CameraPitch;
         public static ConfigEntry<float> CameraHeight;
+        public static ConfigEntry<float> CameraHorizontal;
         public static ConfigEntry<KeyCode> ToggleMenuKey;
 
         // Instance reference
@@ -24,7 +25,7 @@ namespace CamFreeModifiyer
 
         // UI state
         private bool showUI = false;
-        private Rect windowRect = new Rect(20, 20, 300, 250);
+        private Rect windowRect = new Rect(20, 20, 300, 320);
 
         private Harmony harmony;
 
@@ -84,6 +85,16 @@ namespace CamFreeModifiyer
                 )
             );
 
+            CameraHorizontal = Config.Bind(
+                "Camera Settings",
+                "Camera Horizontal",
+                0f,
+                new ConfigDescription(
+                    "Horizontal offset of the camera (negative = left, positive = right)",
+                    new AcceptableValueRange<float>(-10f, 10f)
+                )
+            );
+
             ToggleMenuKey = Config.Bind(
                 "Controls",
                 "Toggle Menu Key",
@@ -133,6 +144,11 @@ namespace CamFreeModifiyer
             CameraHeight.Value = GUILayout.HorizontalSlider(CameraHeight.Value, -5f, 10f);
             GUILayout.Space(10);
 
+            // Camera Horizontal slider
+            GUILayout.Label($"Camera Horizontal: {CameraHorizontal.Value:F1}");
+            CameraHorizontal.Value = GUILayout.HorizontalSlider(CameraHorizontal.Value, -10f, 10f);
+            GUILayout.Space(10);
+
             // Reset button
             if (GUILayout.Button("Reset to Defaults"))
             {
@@ -140,6 +156,7 @@ namespace CamFreeModifiyer
                 CameraDistance.Value = (float)CameraDistance.DefaultValue;
                 CameraPitch.Value = (float)CameraPitch.DefaultValue;
                 CameraHeight.Value = (float)CameraHeight.DefaultValue;
+                CameraHorizontal.Value = (float)CameraHorizontal.DefaultValue;
             }
 
             GUILayout.Space(5);
