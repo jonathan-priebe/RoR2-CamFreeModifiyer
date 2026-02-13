@@ -2,6 +2,12 @@ name: Release
 
 on:
   push:
+    paths-ignore: 
+      - 'README.md'
+      - 'docs/**'
+      - libs/**
+      - img/**
+      - .github/workflows/**
     branches:
       - main
   workflow_dispatch:
@@ -114,6 +120,7 @@ jobs:
           cp README.md release_content/
           cp CHANGELOG.md release_content/
           cp img/icon.png release_content/ 2>/dev/null || echo "Warning: icon.png not found"
+          cp img release_content/ -r 2>/dev/null || echo "Warning: img folder not found"
 
           cd release_content
           zip -r ../CamFreeModifiyer-v${{ steps.new_version.outputs.version }}.zip .
