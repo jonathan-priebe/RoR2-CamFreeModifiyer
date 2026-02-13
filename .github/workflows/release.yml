@@ -67,44 +67,49 @@ jobs:
         run: |
           mkdir -p libs
 
-          # Download BepInEx from Thunderstore (contains Unity DLLs)
-          echo "Downloading BepInEx..."
+          # Download BepInEx from Thunderstore
+          echo "=== Downloading BepInEx ==="
           curl -L -o bepinex.zip "https://thunderstore.io/package/download/bbepis/BepInExPack/5.4.2121/"
           unzip -q -o bepinex.zip -d bepinex_temp
+
+          # Show BepInEx structure for debugging
+          echo "BepInEx DLLs found:"
+          find bepinex_temp -name "*.dll" -type f
 
           # Copy BepInEx core DLLs
           cp bepinex_temp/BepInExPack/BepInEx/core/BepInEx.dll libs/
           cp bepinex_temp/BepInExPack/BepInEx/core/0Harmony.dll libs/
 
-          # Copy Unity DLLs from BepInEx unitylibs
-          echo "Copying Unity DLLs from BepInEx..."
-          cp bepinex_temp/BepInExPack/BepInEx/unitylibs/UnityEngine.dll libs/ 2>/dev/null || true
-          cp bepinex_temp/BepInExPack/BepInEx/unitylibs/UnityEngine.CoreModule.dll libs/ 2>/dev/null || true
-          cp bepinex_temp/BepInExPack/BepInEx/unitylibs/UnityEngine.InputLegacyModule.dll libs/ 2>/dev/null || true
-          cp bepinex_temp/BepInExPack/BepInEx/unitylibs/UnityEngine.IMGUIModule.dll libs/ 2>/dev/null || true
-
-          # List what we have so far
-          echo "Unity DLLs from BepInEx:"
-          ls -la libs/
+          # Copy Unity DLLs from wherever they are in BepInEx
+          find bepinex_temp -name "UnityEngine.dll" -exec cp {} libs/ \;
+          find bepinex_temp -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \;
+          find bepinex_temp -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \;
+          find bepinex_temp -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \;
 
           rm -rf bepinex_temp bepinex.zip
 
-          # Download RoR2 assemblies using NuGet package
-          echo "Downloading RoR2 assemblies..."
-
-          dotnet new console -n temp_project -o temp_proj
+          # Download RoR2 GameLibs NuGet package
+          echo "=== Downloading RoR2 GameLibs ==="
+          dotnet new console -n temp_project -o temp_proj --force
           cd temp_proj
           dotnet add package RiskOfRain2.GameLibs --version 1.3.1.275-r.0
           cd ..
 
-          # Find and copy RoR2 DLLs from NuGet cache
-          echo "Copying RoR2 DLLs from NuGet cache..."
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \; 2>/dev/null || true
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          # Show GameLibs structure for debugging
+          echo "GameLibs DLLs found:"
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "*.dll" -type f | head -30
+
+          # Copy all needed DLLs from GameLibs (it contains Unity DLLs too)
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \;
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \;
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.dll" -exec cp {} libs/ \;
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \;
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \;
+          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \;
 
           rm -rf temp_proj
 
-          echo "Downloaded libs:"
+          echo "=== Final libs content ==="
           ls -la libs/
 
       - name: Build project
