@@ -63,60 +63,9 @@ jobs:
         run: |
           sed -i 's/<Version>[^<]*<\/Version>/<Version>${{ steps.new_version.outputs.version }}<\/Version>/' CamFreeModifiyer.csproj
 
-      - name: Download dependencies
+      - name: Check libary dependencies
         run: |
-          mkdir -p libs
-
-          # Download BepInEx from Thunderstore
-          echo "=== Downloading BepInEx ==="
-          curl -L -o bepinex.zip "https://thunderstore.io/package/download/bbepis/BepInExPack/5.4.2121/"
-          unzip -q -o bepinex.zip -d bepinex_temp
-
-          # Show BepInEx structure for debugging
-          echo "BepInEx DLLs found:"
-          find bepinex_temp -name "*.dll" -type f
-
-          # Copy BepInEx core DLLs
-          cp bepinex_temp/BepInExPack/BepInEx/core/BepInEx.dll libs/
-          cp bepinex_temp/BepInExPack/BepInEx/core/0Harmony.dll libs/
-
-          # Copy Unity DLLs from wherever they are in BepInEx
-          find bepinex_temp -name "UnityEngine.dll" -exec cp {} libs/ \;
-          find bepinex_temp -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \;
-          find bepinex_temp -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \;
-          find bepinex_temp -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \;
-
-          rm -rf bepinex_temp bepinex.zip
-
-          # Download RoR2 GameLibs NuGet package
-          echo "=== Downloading RoR2 GameLibs ==="
-          dotnet new console -n temp_project -o temp_proj --force
-          cd temp_proj
-          dotnet add package RiskOfRain2.GameLibs --version 1.3.1.275-r.0
-          dotnet restore
-          cd ..
-
-          # Copy RoR2 DLLs
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \;
-          find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \;
-
-          rm -rf temp_proj
-
-          # Download Unity stub assemblies from RoR2 community
-          echo "=== Downloading Unity stubs ==="
-          # Using stripped assemblies from a known source
-          curl -L -o stubs.zip "https://github.com/xiaoxiao921/UnityStrippedDll/releases/download/2021.3.33/2021.3.33.zip" || true
-
-          if [ -f stubs.zip ]; then
-            unzip -q -o stubs.zip -d stubs_temp
-            find stubs_temp -name "UnityEngine.dll" -exec cp {} libs/ \;
-            find stubs_temp -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \;
-            find stubs_temp -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \;
-            find stubs_temp -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \;
-            rm -rf stubs_temp stubs.zip
-          fi
-
-          echo "=== Final libs content ==="
+          echo "=== Check libs content ==="
           ls -la libs/
 
       - name: Build project
