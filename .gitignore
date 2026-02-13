@@ -2,9 +2,6 @@
 bin/
 obj/
 
-# DLL references 
-libs/
-
 # IDE files
 .vs/
 .vscode/
