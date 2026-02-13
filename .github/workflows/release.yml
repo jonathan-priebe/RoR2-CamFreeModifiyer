@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.2.0). Leave empty to auto-increment patch.'
+        required: false
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Get current version from Plugin.cs
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(grep -oP 'PluginVersion = "\K[^"]+' src/Plugin.cs)
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT="${{ steps.current_version.outputs.version }}"
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+
+          if [ -n "$INPUT_VERSION" ]; then
+            NEW_VERSION="$INPUT_VERSION"
+          else
+            IFS='.' read -ra PARTS <<< "$CURRENT"
+            MAJOR="${PARTS[0]}"
+            MINOR="${PARTS[1]}"
+            PATCH="${PARTS[2]}"
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version in Plugin.cs
+        run: |
+          sed -i 's/PluginVersion = "[^"]*"/PluginVersion = "${{ steps.new_version.outputs.version }}"/' src/Plugin.cs
+
+      - name: Update version in .csproj
+        run: |
+          sed -i 's/<Version>[^<]*<\/Version>/<Version>${{ steps.new_version.outputs.version }}<\/Version>/' CamFreeModifiyer.csproj
+
+      - name: Download dependencies
+        run: |
+          mkdir -p libs
+
+          # Download BepInEx from Thunderstore
+          echo "Downloading BepInEx..."
+          curl -L -o bepinex.zip "https://thunderstore.io/package/download/bbepis/BepInExPack/5.4.2121/"
+          unzip -q -o bepinex.zip -d bepinex_temp
+          cp bepinex_temp/BepInExPack/BepInEx/core/BepInEx.dll libs/
+          cp bepinex_temp/BepInExPack/BepInEx/core/0Harmony.dll libs/
+          rm -rf bepinex_temp bepinex.zip
+
+          # Download RoR2 stripped assemblies from r2modman CDN / community source
+          echo "Downloading RoR2 assemblies..."
+
+          # Using the NuGet package approach
+          dotnet new console -n temp_project -o temp_proj
+          cd temp_proj
+          dotnet add package RiskOfRain2.GameLibs --version 1.3.4.0
+          cd ..
+
+          # Copy from NuGet cache
+          NUGET_PATH=$(find ~/.nuget/packages/riskofrain2.gamelibs -name "*.dll" -path "*netstandard2.1*" | head -1 | xargs dirname)
+          if [ -n "$NUGET_PATH" ]; then
+            cp "$NUGET_PATH"/RoR2.dll libs/ 2>/dev/null || true
+            cp "$NUGET_PATH"/Assembly-CSharp.dll libs/ 2>/dev/null || true
+          fi
+
+          # Download Unity assemblies from UnityNuGet
+          cd temp_proj
+          dotnet add package Unity.UnityEngine.dll --version 1.0.0-unity3d || true
+          cd ..
+
+          # Find Unity DLLs in cache
+          find ~/.nuget/packages -name "UnityEngine.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find ~/.nuget/packages -name "UnityEngine.CoreModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find ~/.nuget/packages -name "UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find ~/.nuget/packages -name "UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+
+          rm -rf temp_proj
+
+          echo "Downloaded libs:"
+          ls -la libs/
+
+      - name: Build project
+        run: dotnet build -c Release --no-restore || dotnet build -c Release
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -n "$LAST_TAG" ]; then
+            CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" --no-merges | head -20)
+          fi
+
+          echo "# Changelog v${{ steps.new_version.outputs.version }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "## Changes" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "$CHANGELOG" >> CHANGELOG.md
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create manifest.json
+        run: |
+          cat > manifest.json << EOF
+          {
+              "name": "CamFreeModifiyer",
+              "version_number": "${{ steps.new_version.outputs.version }}",
+              "website_url": "https://github.com/jonathan-priebe/RoR2-CamFreeModifiyer",
+              "description": "CamFreeModifier is a mod for Risk of Rain 2 that lets you adjust the camera view during gameplay.",
+              "dependencies": [
+                  "bbepis-BepInExPack-5.4.2121"
+              ]
+          }
+          EOF
+
+      - name: Create release ZIP
+        run: |
+          mkdir -p release_content
+          cp bin/Release/netstandard2.1/CamFreeModifiyer.dll release_content/
+          cp manifest.json release_content/
+          cp README.md release_content/
+          cp CHANGELOG.md release_content/
+          cp img/icon.png release_content/ 2>/dev/null || echo "Warning: icon.png not found"
+
+          cd release_content
+          zip -r ../CamFreeModifiyer-v${{ steps.new_version.outputs.version }}.zip .
+
+      - name: Commit version updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/Plugin.cs CamFreeModifiyer.csproj
+          git diff --staged --quiet || git commit -m "Bump version to ${{ steps.new_version.outputs.version }}"
+          git push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.new_version.outputs.version }}
+          name: CamFreeModifiyer v${{ steps.new_version.outputs.version }}
+          body: |
+            ## CamFreeModifiyer v${{ steps.new_version.outputs.version }}
+
+            ### Changelog
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### Installation
+            1. Download `CamFreeModifiyer-v${{ steps.new_version.outputs.version }}.zip`
+            2. Extract to your `BepInEx/plugins/` folder
+            3. Launch Risk of Rain 2
+          files: |
+            CamFreeModifiyer-v${{ steps.new_version.outputs.version }}.zip
+          draft: false
+          prerelease: false
