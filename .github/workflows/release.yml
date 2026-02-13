@@ -88,39 +88,32 @@ jobs:
 
           rm -rf bepinex_temp bepinex.zip
 
-          # Download RoR2 GameLibs NuGet package
-          echo "=== Downloading RoR2 GameLibs ==="
-          dotnet new console -n temp_project -o temp_proj --force
+          # Download NuGet packages with Unity stubs
+          echo "=== Downloading NuGet packages ==="
+          dotnet new console -n temp_project -o temp_proj --force -f netstandard2.1
           cd temp_proj
+
+          # Add BepInEx.Core which includes Unity stubs
+          dotnet add package BepInEx.Core --version 5.4.21
           dotnet add package RiskOfRain2.GameLibs --version 1.3.1.275-r.0
+          dotnet add package UnityEngine.Modules --version 2021.3.33 2>/dev/null || true
           dotnet restore
           cd ..
+
+          # Copy from NuGet cache
+          echo "=== Copying DLLs from NuGet cache ==="
 
           # Copy RoR2 DLLs
           find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "RoR2.dll" -exec cp {} libs/ \;
           find "$HOME/.nuget/packages/riskofrain2.gamelibs" -name "Assembly-CSharp.dll" -exec cp {} libs/ \;
 
+          # Copy Unity stubs from BepInEx.Core or UnityEngine.Modules
+          find "$HOME/.nuget/packages" -path "*/UnityEngine.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages" -path "*/UnityEngine.CoreModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages" -path "*/UnityEngine.InputLegacyModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+          find "$HOME/.nuget/packages" -path "*/UnityEngine.IMGUIModule.dll" -exec cp {} libs/ \; 2>/dev/null || true
+
           rm -rf temp_proj
-
-          # Download Unity DLLs from a community source
-          echo "=== Downloading Unity DLLs ==="
-          UNITY_VERSION="2021.3.33"
-
-          # Download from UnityNuGet via direct NuGet package
-          curl -L -o unity_core.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine/1.0.0" || true
-          curl -L -o unity_coremodule.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine.CoreModule/1.0.0" || true
-          curl -L -o unity_imgui.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine.IMGUIModule/1.0.0" || true
-          curl -L -o unity_input.nupkg "https://unitynuget-registry.azurewebsites.net/v3/package/Unity.UnityEngine.InputLegacyModule/1.0.0" || true
-
-          # Extract DLLs from nupkg (it's just a zip)
-          for pkg in unity_*.nupkg; do
-            if [ -f "$pkg" ]; then
-              unzip -q -o "$pkg" -d unity_temp 2>/dev/null || true
-              find unity_temp -name "*.dll" -exec cp {} libs/ \; 2>/dev/null || true
-              rm -rf unity_temp
-            fi
-          done
-          rm -f unity_*.nupkg
 
           echo "=== Final libs content ==="
           ls -la libs/
