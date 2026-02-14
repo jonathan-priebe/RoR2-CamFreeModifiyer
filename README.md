@@ -1,6 +1,6 @@
 # RoR2 CamFreeModifiyer
 
-![Menu Camera](img/MenuCam.jpg)
+![Menu Camera](https://raw.githubusercontent.com/jonathan-priebe/RoR2-CamFreeModifiyer/refs/heads/main/img/MenuCam.jpg)
 
 A Risk of Rain 2 mod that lets you customize camera settings during gameplay.
 
@@ -16,7 +16,7 @@ A Risk of Rain 2 mod that lets you customize camera settings during gameplay.
 
 ## Example
 
-![Gameplay Camera](img/GameplayCam.jpg)
+![Gameplay Camera](https://raw.githubusercontent.com/jonathan-priebe/RoR2-CamFreeModifiyer/refs/heads/main/img/GameplayCam.jpg)
 
 ## Requirements
 
